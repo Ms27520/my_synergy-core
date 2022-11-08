@@ -2,7 +2,7 @@
 #include "ui_FailedLoginDialog.h"
 
 FailedLoginDialog::FailedLoginDialog(QWidget *parent, QString message):
-    QDialog(parent),
+    QDialog(parent,  Qt::WindowCloseButtonHint),
     ui(new Ui::FailedLoginDialog)
 {
     ui->setupUi(this);

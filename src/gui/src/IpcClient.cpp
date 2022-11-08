@@ -25,10 +25,19 @@
 #include "Ipc.h"
 #include <QDataStream>
 
+const uint IpcClient::MAX_RETRY_COUNT = 10;
+
 IpcClient::IpcClient() :
 m_ReaderStarted(false),
 m_Enabled(false)
 {
+    m_retryCount = 0;
+
+    m_retryTimer = new QTimer(this);
+    m_retryTimer->setInterval(1000);
+    m_retryTimer->setSingleShot(true);
+    connect(m_retryTimer, SIGNAL(timeout()), SLOT(retryConnect()));
+
     m_Socket = new QTcpSocket(this);
     connect(m_Socket, SIGNAL(connected()), this, SLOT(connected()));
     connect(m_Socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(error(QAbstractSocket::SocketError)));
@@ -50,8 +59,15 @@ void IpcClient::connected()
 void IpcClient::connectToHost()
 {
     m_Enabled = true;
+    ++m_retryCount;
 
-    infoMessage("connecting to service...");
+    if (m_retryCount > MAX_RETRY_COUNT) {
+//        m_retryTimer->stop();
+        errorMessage("retry times exhausted, auto stop");
+        return;
+    }
+
+    infoMessage(QString("[%1/%2] connecting to service...").arg(m_retryCount).arg(MAX_RETRY_COUNT));
     m_Socket->connectToHost(QHostAddress(QHostAddress::LocalHost), IPC_PORT);
 
     if (!m_ReaderStarted) {
@@ -76,9 +92,12 @@ void IpcClient::error(QAbstractSocket::SocketError error)
         default: text = QString("code=%1").arg(error); break;
     }
 
-    errorMessage(QString("ipc connection error, %1").arg(text));
+    errorMessage(QString("ipc connection error, %3").arg(text));
 
-    QTimer::singleShot(1000, this, SLOT(retryConnect()));
+    if (m_retryCount <= MAX_RETRY_COUNT) {
+//        QTimer::singleShot(1000, this, SLOT(retryConnect()));
+        m_retryTimer->start();
+    }
 }
 
 void IpcClient::retryConnect()
@@ -143,4 +162,9 @@ void IpcClient::intToBytes(int value, char *buffer, int size)
     else {
         // TODO: other sizes, if needed.
     }
+}
+
+void IpcClient::setRetryCount(uint count) {
+    m_retryTimer->stop();
+    m_retryCount = count;
 }

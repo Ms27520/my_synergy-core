@@ -28,7 +28,7 @@
 #include <QButtonGroup>
 
 ActionDialog::ActionDialog(QWidget* parent, ServerConfig& config, Hotkey& hotkey, Action& action) :
-    QDialog(parent, Qt::WindowTitleHint | Qt::WindowSystemMenuHint),
+    QDialog(parent, Qt::WindowTitleHint | Qt::WindowSystemMenuHint | Qt::WindowCloseButtonHint),
     Ui::ActionDialogBase(),
     m_ServerConfig(config),
     m_Hotkey(hotkey),

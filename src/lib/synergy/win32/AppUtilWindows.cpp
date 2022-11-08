@@ -196,7 +196,7 @@ AppUtilWindows::getKeyboardLayoutList()
 
         for (int i = 0; i < uLayouts; ++i){
             String code("", 2);
-            GetLocaleInfoA(MAKELCID(((UINT)lpList[i] & 0xffffffff), SORT_DEFAULT), LOCALE_SISO639LANGNAME, &code[0], code.size());
+            GetLocaleInfoA(MAKELCID(((UINT)lpList[i] & 0xffffffff), SORT_DEFAULT), LOCALE_SISO639LANGNAME, &code[0], (int)code.size());
             layoutLangCodes.push_back(code);
         }
 
@@ -215,7 +215,7 @@ AppUtilWindows::getCurrentLanguageCode()
     auto hklLayout = getCurrentKeyboardLayout();
     if (hklLayout) {
         auto localLayoutID = MAKELCID(LOWORD(hklLayout), SORT_DEFAULT);
-        GetLocaleInfoA(localLayoutID, LOCALE_SISO639LANGNAME, &code[0], code.size());
+        GetLocaleInfoA(localLayoutID, LOCALE_SISO639LANGNAME, &code[0], (int)code.size());
     }
 
     return code;

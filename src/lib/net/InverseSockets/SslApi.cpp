@@ -237,15 +237,17 @@ void SslApi::formatFingerprint(std::string &fingerprint) const
 
 bool SslApi::isCertificateExists(const std::string &filename) const
 {
-    bool result = (!filename.empty());
+    String newfilename = filename;
+    synergy::string::removeChar(newfilename, '"');
+    bool result = (!newfilename.empty());
 
     if (result) {
-        std::ifstream file(synergy::filesystem::path(filename));
+        std::ifstream file(synergy::filesystem::path(newfilename));
         result = file.good();
 
         if (!result) {
             std::string errorMsg("tls certificate doesn't exist: ");
-            errorMsg.append(filename);
+            errorMsg.append(newfilename);
             SslLogger::logError(errorMsg.c_str());
         }
     }

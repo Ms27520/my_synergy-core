@@ -26,6 +26,7 @@ FORMS += src/MainWindowBase.ui \
 SOURCES += src/main.cpp \
     src/MainWindow.cpp \
     src/AboutDialog.cpp \
+    src/AboutDialogEliteBackers.cpp \
     src/ServerConfig.cpp \
     src/ServerConfigDialog.cpp \
     src/ScreenSetupView.cpp \
@@ -71,6 +72,7 @@ SOURCES += src/main.cpp \
     src/LicenseManager.cpp
 HEADERS += src/MainWindow.h \
     src/AboutDialog.h \
+    src/AboutDialogEliteBackers.h \
     src/ServerConfig.h \
     src/ServerConfigDialog.h \
     src/ScreenSetupView.h \

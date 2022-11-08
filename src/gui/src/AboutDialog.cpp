@@ -20,7 +20,7 @@
 #include "AboutDialog.h"
 
 AboutDialog::AboutDialog(MainWindow* parent, const AppConfig& config) :
-    QDialog(parent, Qt::WindowTitleHint | Qt::WindowSystemMenuHint),
+    QDialog(parent, Qt::WindowTitleHint | Qt::WindowSystemMenuHint | Qt::WindowCloseButtonHint),
     Ui::AboutDialogBase()
 {
     setupUi(this);
@@ -75,11 +75,11 @@ void AboutDialog::updateLogo() const
 
 QString AboutDialog::getKeyContributors() const
 {
-    return QString(R"(<p style="font-size: 14px">Key contributors<br>
-                    <span style="font-size: 11px">Chris Schoeneman, Nick Bolton, Richard Lee, Adam Feder, Volker Lanz,
+    return QString(tr(R"(<p>Key contributors<br>
+                    <span>Chris Schoeneman, Nick Bolton, Richard Lee, Adam Feder, Volker Lanz,
                     Ryan Breen, Guido Poschta, Bertrand Landry Hetu, Tom Chadwick, Brent Priddy, Kyle Bloom,
                     Daun Chung, Serhii Hadzhylov, Oleksandr Lysytsia, Olena Kutytska, Francisco Magalhães.</span>
-                    </p>)");
+                    </p>)"));
 }
 
 QString AboutDialog::getCopyrights() const
@@ -87,6 +87,6 @@ QString AboutDialog::getCopyrights() const
     QString buildDateString = QString::fromLocal8Bit(__DATE__).simplified();
     QDate buildDate = QLocale("en_US").toDate(buildDateString, "MMM d yyyy");
 
-    QString copyrights(R"(<p>Keyboard and mouse sharing application.<br /><br />Copyright © %%YEAR%% Symless Ltd.</p>)");
+    QString copyrights(tr(R"(<p>Keyboard and mouse sharing application.<br /><br />Copyright © %%YEAR%% Symless Ltd.</p>)"));
     return copyrights.replace(QString("%%YEAR%%"), QString::number(buildDate.year()));
 }

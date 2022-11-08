@@ -29,9 +29,12 @@ SerialKeyType::SerialKeyType()
 void
 SerialKeyType::setKeyType(const std::string& Type)
 {
-	m_isTrial = (Type == SerialKeyType::TRIAL);
-	m_isTemporary = (m_isTrial || (Type == SerialKeyType::SUBSCRIPTION));
-	m_isMaintenance = (Type == SerialKeyType::MAINTENANCE);
+//	m_isTrial = (Type == SerialKeyType::TRIAL);
+//	m_isTemporary = (m_isTrial || (Type == SerialKeyType::SUBSCRIPTION));
+//	m_isMaintenance = (Type == SerialKeyType::MAINTENANCE);
+    m_isTrial = false;
+    m_isTemporary = false;
+    m_isMaintenance = true;
 }
 
 bool

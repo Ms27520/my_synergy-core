@@ -49,9 +49,9 @@ QString AboutDialogEliteBackers::getCopyrights() const
     QString buildDateString = QString::fromLocal8Bit(__DATE__).simplified();
     QDate buildDate = QLocale("en_US").toDate(buildDateString, "MMM d yyyy");
 
-    QString aboutText(R"(<p>Keyboard and mouse sharing application. Cross platform and open source since 2001.<br /><br />
+    QString aboutText(tr(R"(<p>Keyboard and mouse sharing application. Cross platform and open source since 2001.<br /><br />
                         Copyright © %%YEAR%% Symless Ltd.<br /><br />
-                        Synergy is released under the GNU General Public License (GPLv2).</p>)");
+                        Synergy is released under the GNU General Public License (GPLv2).</p>)"));
 
     return aboutText.replace(QString("%%YEAR%%"), QString::number(buildDate.year()));
 }

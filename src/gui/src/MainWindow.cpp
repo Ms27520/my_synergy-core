@@ -147,8 +147,13 @@ MainWindow::MainWindow (AppConfig& appConfig,
     connect(&m_IpcClient, SIGNAL(errorMessage(const QString&)), this, SLOT(appendLogError(const QString&)));
     connect(&m_IpcClient, SIGNAL(infoMessage(const QString&)), this, SLOT(appendLogInfo(const QString&)));
     connect(&m_IpcClient, SIGNAL(readLogLine(const QString&)), this, SLOT(handleIdleService(const QString&)));
-    m_IpcClient.connectToHost();
+//    m_IpcClient.connectToHost();
 #endif
+
+    if (appConfig.processMode() == Service) {
+        m_IpcClient.setRetryCount(0);
+        m_IpcClient.connectToHost();
+    }
 
     // change default size based on os
 #if defined(Q_OS_MAC)
@@ -187,14 +192,14 @@ MainWindow::MainWindow (AppConfig& appConfig,
 
     updateWindowTitle();
 
-    QString lastVersion = m_AppConfig->lastVersion();
-    QString currentVersion = m_VersionChecker.getVersion();
-    if (lastVersion != currentVersion) {
-        m_AppConfig->setLastVersion (currentVersion);
-#ifndef SYNERGY_ENTERPRISE
-        m_LicenseManager->notifyUpdate (lastVersion, currentVersion);
-#endif
-    }
+//    QString lastVersion = m_AppConfig->lastVersion();
+//    QString currentVersion = m_VersionChecker.getVersion();
+//    if (lastVersion != currentVersion) {
+//        m_AppConfig->setLastVersion (currentVersion);
+//#ifndef SYNERGY_ENTERPRISE
+//        m_LicenseManager->notifyUpdate (lastVersion, currentVersion);
+//#endif
+//    }
 
 #ifdef SYNERGY_ENTERPRISE
     m_pActivate->setVisible(false);
@@ -509,7 +514,9 @@ void MainWindow::checkConnected(const QString& line)
     {
         setSynergyState(synergyListening);
     }
-    else if (line.contains("disconnected from server") || line.contains("process exited"))
+    else if (line.contains("disconnected from server") ||
+             line.contains("process exited") ||
+             line.contains("retry times exhausted"))
     {
         setSynergyState(synergyDisconnected);
     }
@@ -580,7 +587,7 @@ void MainWindow::checkSecureSocket(const QString& line)
         secureSocket(true);
 
         //Get the protocol version from the line
-        m_SecureSocketVersion = line.mid(index + strlen(tlsCheckString)); // Compliant: we made sure that tlsCheckString variable ended with null(static const char* declaration)
+        m_SecureSocketVersion = line.mid(index + (int)strlen(tlsCheckString)); // Compliant: we made sure that tlsCheckString variable ended with null(static const char* declaration)
     }
 }
 
@@ -644,15 +651,17 @@ void MainWindow::startSynergy()
 
 #ifndef SYNERGY_ENTERPRISE
     SerialKey serialKey = m_LicenseManager->serialKey();
-    if (!serialKey.isValid()) {
-        if (QDialog::Rejected == raiseActivationDialog()) {
-            return;
-        }
-    }
+//    if (!serialKey.isValid()) {
+//        if (QDialog::Rejected == raiseActivationDialog()) {
+//            return;
+//        }
+//    }
     m_LicenseManager->registerLicense();
 #endif
     bool desktopMode = appConfig().processMode() == Desktop;
     bool serviceMode = appConfig().processMode() == Service;
+
+    appendLogInfo("process mode: " + QString(desktopMode ? "Desktop" : "Service"));
 
     appendLogDebug("starting process");
     m_ExpectedRunningState = kStarted;
@@ -745,7 +754,7 @@ void MainWindow::startSynergy()
     qDebug() << args;
 
     // show command if debug log level...
-    if (appConfig().logLevel() >= 4) {
+    if (appConfig().logLevel() >= 2) {
         appendLogInfo(QString("command: %1 %2").arg(app, args.join(" ")));
     }
 
@@ -760,7 +769,8 @@ void MainWindow::startSynergy()
         if (!synergyProcess()->waitForStarted())
         {
             show();
-            QMessageBox::warning(this, tr("Program can not be started"), QString(tr("The executable<br><br>%1<br><br>could not be successfully started, although it does exist. Please check if you have sufficient permissions to run this program.").arg(app)));
+            QMessageBox::warning(this, tr("Program can not be started"),
+                                 QString(tr("The executable<br><br>%1<br><br>could not be successfully started, although it does exist. Please check if you have sufficient permissions to run this program.").arg(app)));
             return;
         }
     }
@@ -780,8 +790,11 @@ void MainWindow::actionStart()
 
 void MainWindow::retryStart()
 {
-    //This function is only called after a failed start
-    //Only start synergy if the current state is pending retry
+    // This function is only called after a failed start
+    // Only start synergy if the current state is pending retry
+
+    appendLogInfo("retryStart, m_SynergyState: " + QString(m_SynergyState));
+
     if (m_SynergyState == synergyPendingRetry)
     {
         startSynergy();
@@ -1020,6 +1033,7 @@ void MainWindow::stopSynergy()
 void MainWindow::stopService()
 {
     // send empty command to stop service from laucning anything.
+    m_IpcClient.setRetryCount(IpcClient::MAX_RETRY_COUNT);
     m_IpcClient.sendCommand("", appConfig().elevateMode());
 }
 
@@ -1072,17 +1086,21 @@ void MainWindow::setSynergyState(qSynergyState state)
     if (synergyState() == state)
         return;
 
-    if ((state == synergyConnected) || (state == synergyConnecting) || (state == synergyListening) || (state == synergyPendingRetry))
+//    if ((state == synergyConnected) || (state == synergyConnecting) || (state == synergyListening) || (state == synergyPendingRetry))
+    if (state != synergyDisconnected)
     {
-        disconnect (m_pButtonToggleStart, SIGNAL(clicked()), m_pActionStartSynergy, SLOT(trigger()));
-        connect (m_pButtonToggleStart, SIGNAL(clicked()), m_pActionStopSynergy, SLOT(trigger()));
+        m_ExpectedRunningState = kStarted;
+        disconnect(m_pButtonToggleStart, SIGNAL(clicked()), m_pActionStartSynergy, SLOT(trigger()));
+        connect(m_pButtonToggleStart, SIGNAL(clicked()), m_pActionStopSynergy, SLOT(trigger()));
         m_pButtonToggleStart->setText(tr("&Stop"));
         m_pButtonApply->setEnabled(true);
     }
-    else if (state == synergyDisconnected)
+//    else if (state == synergyDisconnected)
+    else
     {
-        disconnect (m_pButtonToggleStart, SIGNAL(clicked()), m_pActionStopSynergy, SLOT(trigger()));
-        connect (m_pButtonToggleStart, SIGNAL(clicked()), m_pActionStartSynergy, SLOT(trigger()));
+        m_ExpectedRunningState = kStopped;
+        disconnect(m_pButtonToggleStart, SIGNAL(clicked()), m_pActionStopSynergy, SLOT(trigger()));
+        connect(m_pButtonToggleStart, SIGNAL(clicked()), m_pActionStartSynergy, SLOT(trigger()));
         m_pButtonToggleStart->setText(tr("&Start"));
         m_pButtonApply->setEnabled(false);
     }

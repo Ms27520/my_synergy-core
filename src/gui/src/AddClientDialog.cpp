@@ -22,7 +22,7 @@
 #include <QLabel>
 
 AddClientDialog::AddClientDialog(const QString& clientName, QWidget* parent) :
-    QDialog(parent, Qt::WindowTitleHint | Qt::WindowSystemMenuHint),
+    QDialog(parent, Qt::WindowTitleHint | Qt::WindowSystemMenuHint | Qt::WindowCloseButtonHint),
     Ui::AddClientDialog(),
     m_AddResult(kAddClientIgnore),
     m_IgnoreAutoConfigClient(false)

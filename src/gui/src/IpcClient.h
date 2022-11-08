@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <QTimer>
 #include <QObject>
 #include <QAbstractSocket>
 
@@ -31,6 +32,8 @@ class IpcClient : public QObject
      Q_OBJECT
 
 public:
+    static const uint MAX_RETRY_COUNT;
+
     IpcClient();
     virtual ~IpcClient();
 
@@ -38,6 +41,7 @@ public:
     void sendCommand(const QString& command, ElevateMode elevate);
     void connectToHost();
     void disconnectFromHost();
+    void setRetryCount(uint count);
 
 public slots:
     void retryConnect();
@@ -58,6 +62,8 @@ signals:
 private:
     QTcpSocket* m_Socket;
     IpcReader* m_Reader;
+    QTimer* m_retryTimer;
     bool m_ReaderStarted;
     bool m_Enabled;
+    uint m_retryCount;
 };

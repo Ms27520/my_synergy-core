@@ -22,7 +22,7 @@
 #include <QtGui>
 
 HotkeyDialog::HotkeyDialog (QWidget* parent, Hotkey& hotkey) :
-    QDialog(parent, Qt::WindowTitleHint | Qt::WindowSystemMenuHint),
+    QDialog(parent, Qt::WindowTitleHint | Qt::WindowSystemMenuHint | Qt::WindowCloseButtonHint),
     Ui::HotkeyDialogBase(),
     m_Hotkey(hotkey)
 {
