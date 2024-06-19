@@ -109,7 +109,7 @@ AppConfig::AppConfig() :
     m_AutoConfig(true),
     m_AutoConfigServer(),
     m_ElevateMode(defaultElevateMode),
-    m_Edition(kUnregistered),
+    m_Edition(kUltimate),
     m_CryptoEnabled(false),
     m_AutoHide(false),
     m_LastExpiringWarningTime(0),
@@ -268,11 +268,11 @@ void AppConfig::loadSettings()
 
     if (updateSerial) {
         m_Serialkey                 = loadSetting(kSerialKey, "").toString().trimmed();
-        m_Edition                   = static_cast<Edition>(loadSetting(kEditionSetting, kUnregistered).toInt());
+        m_Edition                   = static_cast<Edition>(loadSetting(kEditionSetting, kUltimate).toInt());
     }
 
     //Set the default path of the TLS certificate file in the users DIR
-    QString certificateFilename = QString("%1/%2/%3").arg(m_CoreInterface.getProfileDir(),
+    QString certificateFilename = QString("%1\\%2\\%3").arg(m_CoreInterface.getProfileDir(),
                                                           "SSL",
                                                           "Synergy.pem");
 
@@ -280,7 +280,7 @@ void AppConfig::loadSettings()
     m_TLSKeyLength              = loadSetting(kTLSKeyLength, "2048").toString();
 
     if (getCryptoEnabled()) {
-        generateCertificate();
+        generateCertificate(false);
     }
 
 }
@@ -409,7 +409,8 @@ void AppConfig::setAutoConfigServer(const QString& autoConfigServer)
 
 #ifndef SYNERGY_ENTERPRISE
 void AppConfig::setEdition(Edition e) {
-    setSettingModified(m_Edition, e);
+//    setSettingModified(m_Edition, e);
+    setSettingModified(m_Edition, kUltimate);
     setCommonSetting(kEditionSetting, m_Edition);
 }
 
@@ -445,7 +446,7 @@ ElevateMode AppConfig::elevateMode()
 
 void AppConfig::setCryptoEnabled(bool newValue) {
     if (m_CryptoEnabled != newValue && newValue){
-        generateCertificate();
+        generateCertificate(false);
     }
     else {
         emit sslToggled();
@@ -456,12 +457,12 @@ void AppConfig::setCryptoEnabled(bool newValue) {
 bool AppConfig::isCryptoAvailable() const {
     bool result {true};
 
-#if !defined(SYNERGY_ENTERPRISE) && !defined(SYNERGY_BUSINESS)
-    result = (edition() == kPro ||
-              edition() == kPro_China ||
-              edition() == kBusiness ||
-              edition() == kUltimate);
-#endif
+//#if !defined(SYNERGY_ENTERPRISE) && !defined(SYNERGY_BUSINESS)
+//    result = (edition() == kPro ||
+//              edition() == kPro_China ||
+//              edition() == kBusiness ||
+//              edition() == kUltimate);
+//#endif
 
     return result;
 }

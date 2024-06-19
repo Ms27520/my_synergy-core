@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>720</width>
-    <height>552</height>
+    <width>881</width>
+    <height>601</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -138,7 +138,7 @@
     <item>
      <widget class="QWidget" name="m_pMainWidgets" native="true">
       <property name="sizePolicy">
-       <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
         <horstretch>0</horstretch>
         <verstretch>0</verstretch>
        </sizepolicy>
@@ -173,6 +173,12 @@
        </property>
        <item>
         <widget class="QFrame" name="m_pGroupServer">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
          <property name="minimumSize">
           <size>
            <width>0</width>
@@ -205,21 +211,21 @@ background-color: rgba(192,192,192, 0.1);
           <item>
            <widget class="QRadioButton" name="m_pRadioGroupServer">
             <property name="sizePolicy">
-             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
               <horstretch>0</horstretch>
               <verstretch>0</verstretch>
              </sizepolicy>
             </property>
             <property name="minimumSize">
              <size>
-              <width>300</width>
-              <height>30</height>
+              <width>0</width>
+              <height>40</height>
              </size>
             </property>
             <property name="maximumSize">
              <size>
               <width>65535</width>
-              <height>30</height>
+              <height>65535</height>
              </size>
             </property>
             <property name="styleSheet">
@@ -268,7 +274,11 @@ background-color: rgba(192,192,192, 0.1);
              <number>0</number>
             </property>
             <item>
-             <widget class="QLineEdit" name="m_pLineEditClienIp"/>
+             <widget class="QLineEdit" name="m_pLineEditClienIp">
+              <property name="frame">
+               <bool>false</bool>
+              </property>
+             </widget>
             </item>
             <item>
              <widget class="QPushButton" name="m_pButtonConnectToClient">
@@ -368,6 +378,12 @@ background-color: rgba(192,192,192, 0.1);
        </item>
        <item>
         <widget class="QFrame" name="m_pGroupClient">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
          <property name="minimumSize">
           <size>
            <width>0</width>
@@ -400,7 +416,7 @@ background-color: rgba(192,192,192, 0.1);
           <item>
            <widget class="QRadioButton" name="m_pRadioGroupClient">
             <property name="sizePolicy">
-             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
               <horstretch>0</horstretch>
               <verstretch>0</verstretch>
              </sizepolicy>
@@ -408,13 +424,13 @@ background-color: rgba(192,192,192, 0.1);
             <property name="minimumSize">
              <size>
               <width>0</width>
-              <height>30</height>
+              <height>40</height>
              </size>
             </property>
             <property name="maximumSize">
              <size>
-              <width>300</width>
-              <height>30</height>
+              <width>65535</width>
+              <height>65535</height>
              </size>
             </property>
             <property name="styleSheet">
@@ -434,7 +450,7 @@ background-color: rgba(192,192,192, 0.1);
              <enum>Qt::Vertical</enum>
             </property>
             <property name="sizeType">
-             <enum>QSizePolicy::Minimum</enum>
+             <enum>QSizePolicy::Preferred</enum>
             </property>
             <property name="sizeHint" stdset="0">
              <size>
@@ -484,6 +500,9 @@ background-color: rgba(192,192,192, 0.1);
               </property>
               <property name="toolTip">
                <string>Hostname or IP address of the server computer.</string>
+              </property>
+              <property name="frame">
+               <bool>false</bool>
               </property>
              </widget>
             </item>
@@ -599,6 +618,12 @@ background-color: rgba(192,192,192, 0.1);
     </item>
     <item>
      <widget class="QFrame" name="m_pGroupLog">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
       <property name="minimumSize">
        <size>
         <width>0</width>
@@ -647,6 +672,9 @@ background-color: rgba(192,192,192, 0.1);
          </property>
          <property name="autoFillBackground">
           <bool>false</bool>
+         </property>
+         <property name="frameShape">
+          <enum>QFrame::NoFrame</enum>
          </property>
          <property name="undoRedoEnabled">
           <bool>false</bool>
@@ -715,6 +743,7 @@ background-color: rgba(192,192,192, 0.1);
          <font>
           <family>Arial</family>
           <pointsize>-1</pointsize>
+          <weight>87</weight>
           <bold>true</bold>
          </font>
         </property>

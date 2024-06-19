@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>778</width>
+    <width>807</width>
     <height>508</height>
    </rect>
   </property>
@@ -158,6 +158,9 @@
              <property name="text">
               <string>Add computer</string>
              </property>
+             <property name="autoDefault">
+              <bool>false</bool>
+             </property>
              <property name="default">
               <bool>true</bool>
              </property>
@@ -210,7 +213,7 @@
           <bool>false</bool>
          </property>
          <property name="frameShape">
-          <enum>QFrame::StyledPanel</enum>
+          <enum>QFrame::NoFrame</enum>
          </property>
          <property name="frameShadow">
           <enum>QFrame::Sunken</enum>
@@ -235,16 +238,38 @@
           <string>&amp;Hotkeys</string>
          </property>
          <layout class="QGridLayout">
+          <property name="topMargin">
+           <number>12</number>
+          </property>
           <item row="0" column="0" rowspan="4">
-           <widget class="QListWidget" name="m_pListHotkeys"/>
+           <widget class="QListWidget" name="m_pListHotkeys">
+            <property name="frameShape">
+             <enum>QFrame::NoFrame</enum>
+            </property>
+            <property name="frameShadow">
+             <enum>QFrame::Sunken</enum>
+            </property>
+           </widget>
           </item>
           <item row="0" column="1">
            <widget class="QPushButton" name="m_pButtonNewHotkey">
             <property name="enabled">
              <bool>true</bool>
             </property>
+            <property name="autoFillBackground">
+             <bool>false</bool>
+            </property>
             <property name="text">
              <string>&amp;New</string>
+            </property>
+            <property name="autoDefault">
+             <bool>false</bool>
+            </property>
+            <property name="default">
+             <bool>false</bool>
+            </property>
+            <property name="flat">
+             <bool>false</bool>
             </property>
            </widget>
           </item>
@@ -296,7 +321,14 @@
          </property>
          <layout class="QGridLayout">
           <item row="0" column="0" rowspan="4">
-           <widget class="QListWidget" name="m_pListActions"/>
+           <widget class="QListWidget" name="m_pListActions">
+            <property name="frameShape">
+             <enum>QFrame::NoFrame</enum>
+            </property>
+            <property name="frameShadow">
+             <enum>QFrame::Sunken</enum>
+            </property>
+           </widget>
           </item>
           <item row="0" column="1">
            <widget class="QPushButton" name="m_pButtonNewAction">
@@ -377,12 +409,15 @@
            </property>
            <property name="styleSheet">
             <string notr="true">QGroupBox::title{
-   left: -5px;
-   top: -2px;
+   left: 0px;
+   top: 0px;
 }</string>
            </property>
            <property name="title">
             <string>&amp;Switch computer</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
            </property>
            <layout class="QVBoxLayout">
             <property name="spacing">
@@ -528,12 +563,15 @@
            </property>
            <property name="styleSheet">
             <string notr="true">QGroupBox::title{
-   left: -2px;
-   top: -2px;
+   left: 0px;
+   top: 0px;
 }</string>
            </property>
            <property name="title">
             <string>Clipboard sharing</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_3">
             <property name="topMargin">
@@ -635,8 +673,8 @@
          </property>
          <property name="styleSheet">
           <string notr="true">QGroupBox::title{
-   left: -5px;
-   top: -2px;
+   left: 0px;
+   top: 0px;
 }</string>
          </property>
          <property name="title">
@@ -725,12 +763,15 @@
            </property>
            <property name="styleSheet">
             <string notr="true">QGroupBox::title{
-   left: -5px;
-   top: -2px;
+   left: 0px;
+   top: 0px;
 }</string>
            </property>
            <property name="title">
             <string>&amp;Options</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
            </property>
            <layout class="QGridLayout">
             <property name="verticalSpacing">
@@ -914,11 +955,21 @@
          </item>
          <item>
           <widget class="QLabel" name="label_5">
+           <property name="font">
+            <font>
+             <pointsize>12</pointsize>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
+           </property>
            <property name="text">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p style=&quot;text-align: center; font-family: Arial; font-size: 18px; line-height: 25px;&quot;&gt;Config override&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            <string>Config Override</string>
            </property>
            <property name="textFormat">
-            <enum>Qt::RichText</enum>
+            <enum>Qt::PlainText</enum>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
            </property>
           </widget>
          </item>
@@ -941,7 +992,7 @@
          <item>
           <widget class="QLabel" name="label_6">
            <property name="text">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p style=&quot;text-align: center; font-size: 13px; font-family: Arial; line-hegiht: 18px;&quot;&gt;If you have a config file and want to override all setttings with this file.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p style=&quot;text-align: center; font-family: Arial; line-hegiht: 18px;&quot;&gt;If you have a config file and want to override all setttings with this file.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
            <property name="textFormat">
             <enum>Qt::RichText</enum>

@@ -2,7 +2,7 @@
 #include "ui_CancelActivationDialog.h"
 
 CancelActivationDialog::CancelActivationDialog(QWidget *parent) :
-    QDialog(parent),
+    QDialog(parent, Qt::WindowCloseButtonHint),
     ui(new Ui::CancelActivationDialog)
 {
     ui->setupUi(this);

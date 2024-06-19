@@ -20,7 +20,7 @@
 #include "AboutDialog.h"
 
 AboutDialog::AboutDialog(MainWindow* parent, const AppConfig& config) :
-    QDialog(parent, Qt::WindowTitleHint | Qt::WindowSystemMenuHint),
+    QDialog(parent, Qt::WindowTitleHint | Qt::WindowSystemMenuHint | Qt::WindowCloseButtonHint),
     Ui::AboutDialogBase()
 {
     setupUi(this);

@@ -23,4 +23,7 @@
         <file>fonts/Arial.ttf</file>
         <file>image/setupBlocker.png</file>
     </qresource>
+    <qresource prefix="/qt/etc">
+        <file>qt.conf</file>
+    </qresource>
 </RCC>

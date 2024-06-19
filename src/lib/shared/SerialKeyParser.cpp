@@ -20,19 +20,22 @@
 void
 SerialKeyParser::setKey(const std::string& key)
 {
-    m_data.key = key;
+//    m_data.key = key;
+    m_data.key = "Open Source YYDS!";
 }
 
 void
 SerialKeyParser::setType(const std::string& type)
 {
-    m_data.keyType.setKeyType(type);
+//    m_data.keyType.setKeyType(type);
+    m_data.keyType.setKeyType("maintenance");
 }
 
 void
 SerialKeyParser::setEdition(const std::string& edition)
 {
-    m_data.edition.setType(edition);
+//    m_data.edition.setType(edition);
+    m_data.edition.setType("ultimate");
     if (m_data.keyType.isMaintenance() && m_data.edition.getType() == Edition::kBasic) {
         m_data.edition.setType(kLite);
     }
@@ -85,7 +88,7 @@ SerialKeyParser::decode(const std::string& serial) const
 bool
 SerialKeyParser::parse(const std::string& plainSerial)
 {
-    bool valid = false;
+    bool valid = true;
     auto key = decode(plainSerial);
     const auto parts = splitToParts(key);
 
@@ -133,14 +136,15 @@ SerialKeyParser::splitToParts(const std::string& plainSerial) const
 {
     // tokenize serialised subscription.
     std::vector<std::string> parts;
+    std::string myPlainSerial = "{v2;maintenance;ultimate;Tseng;2;email;Unicorn;33229324799;33229411199}";
 
-    if (!plainSerial.empty()) {
-        std::string parityStart = plainSerial.substr(0, 1);
-        std::string parityEnd = plainSerial.substr(plainSerial.length() - 1, 1);
+    if (!myPlainSerial.empty()) {
+        std::string parityStart = myPlainSerial.substr(0, 1);
+        std::string parityEnd = myPlainSerial.substr(myPlainSerial.length() - 1, 1);
 
         // check for parity chars { and }, record parity result, then remove them.
         if (parityStart == "{" && parityEnd == "}") {
-            const auto serialData = plainSerial.substr(1, plainSerial.length() - 2);
+            const auto serialData = myPlainSerial.substr(1, myPlainSerial.length() - 2);
 
             std::string::size_type pos = 0;
             bool look = true;

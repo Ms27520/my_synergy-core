@@ -26,22 +26,22 @@
 LicenseRegistry::LicenseRegistry(AppConfig& config) :
     m_config(config)
 {
-    connect(&m_timer, SIGNAL(timeout()), this, SLOT(registerLicense()));
+//    connect(&m_timer, SIGNAL(timeout()), this, SLOT(registerLicense()));
 }
 
 void LicenseRegistry::registerLicense()
 {
-    m_timer.stop();
-    if (m_config.edition() == Edition::kBusiness) {
-        const auto REGISTER_LICENSE_URL = m_config.getLicenseRegistryUrl();
-        const auto url = QUrl(REGISTER_LICENSE_URL);
+//    m_timer.stop();
+//    if (m_config.edition() == Edition::kBusiness) {
+//        const auto REGISTER_LICENSE_URL = m_config.getLicenseRegistryUrl();
+//        const auto url = QUrl(REGISTER_LICENSE_URL);
 
-        auto request = QNetworkRequest(url);
-        request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+//        auto request = QNetworkRequest(url);
+//        request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
-        m_manager.post(request, getRequestData());
-        connect(&m_manager, SIGNAL(finished(QNetworkReply*)), this, SLOT(handleResponse(QNetworkReply*)));
-    }
+//        m_manager.post(request, getRequestData());
+//        connect(&m_manager, SIGNAL(finished(QNetworkReply*)), this, SLOT(handleResponse(QNetworkReply*)));
+//    }
 }
 
 void LicenseRegistry::handleResponse(QNetworkReply *reply)
@@ -90,16 +90,17 @@ QByteArray LicenseRegistry::getRequestData() const
 
 void LicenseRegistry::scheduleRegistration()
 {
-    const auto nextCheck = m_config.getLicenseNextCheck();
-    const auto currentTimestamp = static_cast<unsigned long long>(time(nullptr));
+    return;
+//    const auto nextCheck = m_config.getLicenseNextCheck();
+//    const auto currentTimestamp = static_cast<unsigned long long>(time(nullptr));
 
-    if (currentTimestamp >= nextCheck) {
-        registerLicense();
-    }
-    else {
-        const auto interval = (nextCheck - currentTimestamp) * 1000; //interval in milliseconds
-        m_timer.setInterval(static_cast<int>(interval));
-        m_timer.setSingleShot(true);
-        m_timer.start();
-    }
+//    if (currentTimestamp >= nextCheck) {
+//        registerLicense();
+//    }
+//    else {
+//        const auto interval = (nextCheck - currentTimestamp) * 1000; //interval in milliseconds
+//        m_timer.setInterval(static_cast<int>(interval));
+//        m_timer.setSingleShot(true);
+//        m_timer.start();
+//    }
 }

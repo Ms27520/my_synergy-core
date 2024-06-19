@@ -312,6 +312,7 @@ SecureSocket::initSsl(bool server)
 bool
 SecureSocket::loadCertificates(String& filename)
 {
+    synergy::string::removeChar(filename, '"');
     if (filename.empty()) {
         SslLogger::logError("tls certificate is not specified");
         return false;

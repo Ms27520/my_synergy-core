@@ -227,16 +227,18 @@ ServerApp::loadConfig()
 bool
 ServerApp::loadConfig(const String& pathname)
 {
+    String newpath = pathname;
+    synergy::string::removeChar(newpath, '"');
     try {
         // load configuration
-        LOG((CLOG_DEBUG "opening configuration \"%s\"", pathname.c_str()));
-        std::ifstream configStream(synergy::filesystem::path(pathname));
+        LOG((CLOG_DEBUG "opening configuration %s", newpath.c_str()));
+        std::ifstream configStream(synergy::filesystem::path(newpath));
         if (!configStream.is_open()) {
             // report failure to open configuration as a debug message
             // since we try several paths and we expect some to be
             // missing.
-            LOG((CLOG_DEBUG "cannot open configuration \"%s\"",
-                pathname.c_str()));
+            LOG((CLOG_DEBUG "cannot open configuration %s",
+                newpath.c_str()));
             return false;
         }
         configStream >> *args().m_config;
@@ -245,8 +247,8 @@ ServerApp::loadConfig(const String& pathname)
     }
     catch (XConfigRead& e) {
         // report error in configuration file
-        LOG((CLOG_ERR "cannot read configuration \"%s\": %s",
-            pathname.c_str(), e.what()));
+        LOG((CLOG_ERR "cannot read configuration %s: %s",
+            newpath.c_str(), e.what()));
     }
     return false;
 }

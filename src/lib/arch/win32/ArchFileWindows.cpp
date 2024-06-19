@@ -168,6 +168,8 @@ ArchFileWindows::getProfileDirectory()
         }
     }
 
+    synergy::string::removeChar(dir, '"');
+
     // HACK: append program name, this seems wrong.
     dir.append("\\Synergy");
 

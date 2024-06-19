@@ -26,6 +26,7 @@
 #include <QtCore>
 #include <QtGui>
 #include <QMessageBox>
+#include <QStyleFactory>
 
 #if defined(Q_OS_MAC)
 #include <Carbon/Carbon.h>
@@ -61,6 +62,11 @@ int main(int argc, char* argv[])
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
 
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+    qputenv("QT_ENABLE_HIGHDPI_SCALING", "1");
+    QGuiApplication::setHighDpiScaleFactorRoundingPolicy(Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
+#endif
+
     QCoreApplication::setOrganizationName("Synergy");
     QCoreApplication::setOrganizationDomain("http://symless.com/");
     QCoreApplication::setApplicationName("Synergy");
@@ -85,6 +91,8 @@ int main(int argc, char* argv[])
 #ifndef Q_OS_WIN
     QApplication::setQuitOnLastWindowClosed(false);
 #endif
+
+    QApplication::setStyle(QStyleFactory::create("macintosh"));
 
     AppConfig appConfig;
     qRegisterMetaType<Edition>("Edition");

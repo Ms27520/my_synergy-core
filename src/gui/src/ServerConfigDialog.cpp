@@ -29,7 +29,8 @@
 #include <QFileDialog>
 
 ServerConfigDialog::ServerConfigDialog(QWidget* parent, ServerConfig& config) :
-    QDialog(parent, Qt::WindowTitleHint | Qt::WindowSystemMenuHint),
+    QDialog(parent, Qt::WindowTitleHint | Qt::WindowSystemMenuHint |
+            Qt::WindowMinimizeButtonHint | Qt::WindowMaximizeButtonHint | Qt::WindowCloseButtonHint),
     Ui::ServerConfigDialogBase(),
     m_OrigServerConfig(config),
     m_OrigServerAppConfigUseExternalConfig(config.getUseExternalConfig()),

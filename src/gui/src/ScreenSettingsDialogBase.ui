@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>403</width>
-    <height>675</height>
+    <width>488</width>
+    <height>671</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -89,6 +89,9 @@ background-color: rgba(192,192,192, 0.1);
         </property>
         <property name="maxLength">
          <number>255</number>
+        </property>
+        <property name="frame">
+         <bool>false</bool>
         </property>
        </widget>
       </item>
@@ -195,6 +198,9 @@ background-color: rgba(192,192,192, 0.1);
       </item>
       <item row="0" column="1">
        <widget class="QComboBox" name="m_pComboBoxShift">
+        <property name="frame">
+         <bool>true</bool>
+        </property>
         <item>
          <property name="text">
           <string>Shift</string>
@@ -854,6 +860,9 @@ left: 30px;
           <property name="maxLength">
            <number>255</number>
           </property>
+          <property name="frame">
+           <bool>false</bool>
+          </property>
          </widget>
         </item>
         <item row="1" column="0" colspan="2">
@@ -935,6 +944,9 @@ font-weight: bold;</string>
           </property>
           <property name="styleSheet">
            <string notr="true"/>
+          </property>
+          <property name="frameShape">
+           <enum>QFrame::NoFrame</enum>
           </property>
           <property name="selectionMode">
            <enum>QAbstractItemView::ExtendedSelection</enum>
