@@ -1,41 +1,11 @@
-import os
-from lib import windows
-import subprocess
-import sys
-import argparse
-import traceback
+#!/usr/bin/env python3
 
-config_file = "deps.yml"
-
-
-class EnvError(Exception):
-    pass
-
-
-class YamlError(Exception):
-    pass
-
-
-class PlatformError(Exception):
-    pass
-
-
-class PathError(Exception):
-    pass
-
-
-try:
-    import yaml  # type: ignore
-except ImportError:
-    # this is fairly common in earlier versions of python3,
-    # which is normally what you find on mac and windows.
-    print("Python yaml module missing, please install: pip install pyyaml")
-    sys.exit(1)
+import os, sys, argparse, traceback
+import lib.env as env
+import lib.cmd_utils as cmd_utils
 
 
 def main():
-    """Entry point for the script."""
-
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--pause-on-exit", action="store_true", help="Useful on Windows"
@@ -45,292 +15,117 @@ def main():
     )
     args = parser.parse_args()
 
+    # ensures that pip and venv are available for `ensure_module` function.
+    env.ensure_dependencies()
+
+    # important: load venv before loading modules that install deps.
+    env.ensure_in_venv(__file__)
+
+    error = False
     try:
         deps = Dependencies(args.only)
         deps.install()
     except Exception:
         traceback.print_exc()
+        error = True
 
     if args.pause_on_exit:
         input("Press enter to continue...")
 
-
-def run(command, check=True):
-    """Runs a shell command and by default asserts that the return code is 0."""
-
-    command_str = command
-    if isinstance(command, list):
-        command_str = " ".join(command)
-
-    print(f"Running: {command_str}")
-
-    try:
-        subprocess.run(command, shell=True, check=check)
-    except subprocess.CalledProcessError as e:
-        print(f"Command failed: {command_str}", file=sys.stderr)
-        raise e
-
-
-def get_os():
-    """Detects the operating system."""
-    if sys.platform == "win32":
-        return "windows"
-    elif sys.platform == "darwin":
-        return "mac"
-    elif sys.platform.startswith("linux"):
-        return "linux"
-    else:
-        raise PlatformError(f"Unsupported platform: {sys.platform}")
-
-
-def get_linux_distro():
-    """Detects the Linux distro."""
-    os_file = "/etc/os-release"
-    if os.path.isfile(os_file):
-        with open(os_file) as f:
-            for line in f:
-                if line.startswith("ID="):
-                    return line.strip().split("=")[1].strip('"')
-    return None
-
-
-class Config:
-    """Reads the dependencies configuration file."""
-
-    def __init__(self):
-        with open(config_file, "r") as f:
-            data = yaml.safe_load(f)
-
-        os_name = get_os()
-        try:
-            root = data["dependencies"]
-        except KeyError:
-            raise YamlError(f"Nothing found in {config_file} for: dependencies")
-
-        try:
-            self.os = root[os_name]
-        except KeyError:
-            raise YamlError(f"Nothing found in {config_file} for: {os_name}")
-
-    def get_qt_config(self):
-        try:
-            return self.os["qt"]
-        except KeyError:
-            raise YamlError(f"Nothing found in {config_file} for: qt")
-
-    def get_packages_file(self):
-        try:
-            return self.os["packages"]
-        except KeyError:
-            raise YamlError(f"Nothing found in {config_file} for: packages")
-
-    def get_linux_package_command(self, distro):
-        try:
-            distro_data = self.os[distro]
-        except KeyError:
-            raise YamlError(f"Nothing found in {config_file} for: {distro}")
-
-        try:
-            command_base = distro_data["command"]
-        except KeyError:
-            raise YamlError(f"No package command found in {config_file} for: {distro}")
-
-        try:
-            package_data = distro_data["packages"]
-        except KeyError:
-            raise YamlError(f"No package list found in {config_file} for: {distro}")
-
-        packages = " ".join(package_data)
-        return f"{command_base} {packages}"
+    if error:
+        sys.exit(1)
 
 
 class Dependencies:
 
     def __init__(self, only):
+        from lib.config import Config
+
         self.config = Config()
         self.only = only
+        self.ci_env = env.is_running_in_ci()
+
+        if self.ci_env:
+            print("CI environment detected")
 
     def install(self):
         """Installs dependencies for the current platform."""
 
-        os = get_os()
-        if os == "windows":
+        if env.is_windows():
             self.windows()
-        elif os == "mac":
+        elif env.is_mac():
             self.mac()
-        elif os == "linux":
+        elif env.is_linux():
             self.linux()
         else:
-            raise PlatformError(f"Unsupported platform: {os}")
+            raise RuntimeError(f"Unsupported platform: {os}")
 
     def windows(self):
         """Installs dependencies on Windows."""
+        import lib.windows as windows
 
         if not windows.is_admin():
             windows.relaunch_as_admin(__file__)
             sys.exit()
 
-        ci_env = os.environ.get("CI")
-        if ci_env:
-            print("CI environment detected")
-
         only_qt = self.only == "qt"
 
         # for ci, skip qt; we install qt separately so we can cache it.
-        if not ci_env or only_qt:
-            qt = WindowsQt(self.config.get_qt_config())
+        if not self.ci_env or only_qt:
+            qt = windows.WindowsQt(*self.config.get_qt_config())
             qt_install_dir = qt.get_install_dir()
             if qt_install_dir:
                 print(f"Skipping Qt, already installed at: {qt_install_dir}")
             else:
                 qt.install()
 
+            if not self.ci_env:
+                qt.set_env_vars()
+
             if only_qt:
                 return
 
-        # use winget instead of choco to install the vc++ deps, since in choco there is no way
-        # to load a choco config file but skip a specific package (i.e. to skip vc++ for ci)
-        if not ci_env:
-            winget = WindowsWinGet()
-            winget.install_visual_studio()
-
-        choco = WindowsChoco()
-        if ci_env:
+        choco = windows.WindowsChoco()
+        if self.ci_env:
             choco.config_ci_cache()
+            edit_config, skip_packages = self.config.get_choco_ci_config()
+            choco.remove_from_config(edit_config, skip_packages)
 
-        try:
-            command = self.config.os["command"]
-        except KeyError:
-            raise YamlError(f"Nothing found in {config_file} on Windows for: command")
-
-        choco.install(command, ci_env)
+        command = self.config.get_deps_command()
+        choco.install(command, self.ci_env)
 
     def mac(self):
         """Installs dependencies on macOS."""
-        try:
-            command = self.config.os["command"]
-        except KeyError:
-            raise YamlError(f"Nothing found in {config_file} on Mac for: command")
+        import lib.mac as mac
 
-        run(command)
+        command = self.config.get_os_deps_value("command")
+        cmd_utils.run(command, shell=True, print_cmd=True)
+
+        if not self.ci_env:
+            mac.set_cmake_prefix_env_var(self.config.get_os_value("qt-prefix-command"))
 
     def linux(self):
         """Installs dependencies on Linux."""
 
-        distro = get_linux_distro()
+        distro = env.get_linux_distro()
         if not distro:
-            raise PlatformError("Unable to detect Linux distro")
+            raise RuntimeError("Unable to detect Linux distro")
 
-        command = self.config.get_linux_package_command(distro)
-        run(command)
+        command = self.config.get_linux_deps_command(distro)
 
+        has_sudo = cmd_utils.has_command("sudo")
+        if "sudo" in command and not has_sudo:
+            # assume we're running as root if sudo is not found (common on older distros).
+            # a space char is intentionally added after "sudo" for intentionality.
+            # possible limitation with stripping "sudo" is that if any packages with "sudo" in the
+            # name are added to the list (probably very unlikely), this will have undefined behavior.
+            print("The 'sudo' command was not found, stripping sudo from command")
+            command = command.replace("sudo ", "").strip()
 
-class WindowsWinGet:
-    """WinGet for Windows."""
-
-    def install_visual_studio(self):
-        """Installs packages using WinGet."""
-
-        override = [
-            "--quiet",
-            "--wait",
-            "--includeRecommended",
-            "--add Microsoft.VisualStudio.Workload.MSBuildTools",
-            "--add Microsoft.VisualStudio.Workload.VCTools",
-        ]
-
-        args = [
-            "winget",
-            "install",
-            "--silent",
-            "--id",
-            "Microsoft.VisualStudio.2022.BuildTools",
-            "--override",
-            f'"{" ".join(override)}"',
-        ]
-
-        run(
-            " ".join(args),
-            check=False,
-        )
+        # don't check the return code, as some package managers return non-zero exit codes
+        # under normal circumstances (e.g. dnf returns 100 when there are updates available).
+        cmd_utils.run(command, check=False, shell=True, print_cmd=True)
 
 
-class WindowsChoco:
-    """Chocolatey for Windows."""
-
-    def install(self, command, ci_env):
-        """Installs packages using Chocolatey."""
-        if ci_env:
-            # don't show noisy choco progress bars in ci env
-            run(f"{command} --no-progress")
-        else:
-            run(command)
-
-    def config_ci_cache(self):
-        """Configures Chocolatey cache for CI."""
-
-        runner_temp_key = "RUNNER_TEMP"
-        runner_temp = os.environ.get(runner_temp_key)
-        if runner_temp:
-            # sets the choco cache dir, which should match the dir in the ci cache action.
-            key_arg = '--name="cacheLocation"'
-            value_arg = f'--value="{runner_temp}/choco"'
-            run(["choco", "config", "set", key_arg, value_arg])
-        else:
-            print(f"Warning: CI environment variable {runner_temp_key} not set")
-
-
-class WindowsQt:
-    """Qt for Windows."""
-
-    def __init__(self, config):
-        self.config = config
-
-        self.version = os.environ.get("QT_VERSION")
-        if not self.version:
-            try:
-                default_version = config["version"]
-            except KeyError:
-                raise EnvError(f"Qt version not set in {config_file}")
-
-            print(f"QT_VERSION not set, using: {default_version}")
-            self.version = default_version
-
-        self.base_dir = os.environ.get("QT_BASE_DIR")
-        if not self.base_dir:
-            try:
-                default_base_dir = config["install-dir"]
-            except KeyError:
-                raise EnvError(f"Qt install-dir not set in {config_file}")
-
-            print(f"QT_BASE_DIR not set, using: {default_base_dir}")
-            self.base_dir = default_base_dir
-
-        self.install_dir = f"{self.base_dir}\\{self.version}"
-
-    def get_install_dir(self):
-        if os.path.isdir(self.install_dir):
-            return self.install_dir
-
-    def install(self):
-        """Installs Qt on Windows."""
-
-        run(["pip", "install", "aqtinstall"])
-
-        try:
-            mirror_url = self.config["mirror"]
-        except KeyError:
-            raise EnvError(f"Qt mirror not set in {config_file}")
-
-        args = ["python", "-m", "aqt", "install-qt"]
-        args.extend(["--outputdir", self.base_dir])
-        args.extend(["--base", mirror_url])
-        args.extend(["windows", "desktop", self.version, "win64_msvc2019_64"])
-        run(args)
-
-        install_dir = self.get_install_dir()
-        if not install_dir:
-            raise EnvError(f"Qt not installed, path not found: {install_dir}")
-
-
-main()
+if __name__ == "__main__":
+    main()

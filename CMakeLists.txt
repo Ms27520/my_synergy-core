@@ -1,6 +1,6 @@
 # Synergy -- mouse and keyboard sharing utility
-# Copyright (C) 2012-2016 Symless Ltd.
-# Copyright (C) 2009 Nick Bolton
+# Copyright (C) 2012-2024 Symless Ltd.
+# Copyright (C) 2009-2012 Nick Bolton
 #
 # This package is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -17,6 +17,9 @@
 cmake_minimum_required (VERSION 3.5)
 project (synergy-core C CXX)
 
+include (cmake/Version.cmake)
+set_version()
+
 # use response files so that ninja can compile on windows,
 # otherwise you get an error when linking qt:
 #   "The input line is too long."
@@ -26,12 +29,12 @@ set(CMAKE_C_RESPONSE_FILE_LINK_FLAG "@")
 set(CMAKE_CXX_RESPONSE_FILE_LINK_FLAG "@")
 set(CMAKE_NINJA_FORCE_RESPONSE_FILE 1 CACHE INTERNAL "")
 
-if (DEFINED ENV{SYNERGY_NO_LEGACY})
-    option (SYNERGY_BUILD_LEGACY_GUI "Build the legacy GUI" OFF)
-    option (SYNERGY_BUILD_LEGACY_INSTALLER "Build the legacy installer" OFF)
+if (DEFINED ENV{SYNERGY_BUILD_MINIMAL})
+    option (SYNERGY_BUILD_GUI "Build the GUI" OFF)
+    option (SYNERGY_BUILD_INSTALLER "Build the installer" OFF)
 else()
-    option (SYNERGY_BUILD_LEGACY_GUI "Build the legacy GUI" ON)
-    option (SYNERGY_BUILD_LEGACY_INSTALLER "Build the legacy installer" ON)
+    option (SYNERGY_BUILD_GUI "Build the GUI" ON)
+    option (SYNERGY_BUILD_INSTALLER "Build the installer" ON)
 endif()
 
 if (DEFINED ENV{SYNERGY_NO_TESTS})
@@ -59,6 +62,18 @@ else()
     option (SYNERGY_BUSINESS "Build Business" OFF)
 endif()
 
+if (SYNERGY_DEVELOPER_MODE)
+    add_definitions (-DSYNERGY_DEVELOPER_MODE=1)
+endif()
+
+if (SYNERGY_ENTERPRISE)
+    add_definitions (-DSYNERGY_ENTERPRISE=1)
+endif()
+
+if (SYNERGY_BUSINESS)
+    add_definitions(-DSYNERGY_BUSINESS=1)
+endif()
+
 set (CMAKE_CXX_STANDARD 20)
 set (CMAKE_CXX_EXTENSIONS OFF)
 set (CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -80,11 +95,6 @@ endif()
 if (NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_definitions (-DNDEBUG)
 endif()
-
-#
-# Synergy version
-#
-include (cmake/Version.cmake)
 
 # TODO: Find out why we need these, and remove them
 if (COMMAND cmake_policy)
@@ -331,7 +341,7 @@ if (UNIX)
         add_definitions (-DWINAPI_XWINDOWS=1)
     endif()
 
-elseif (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+elseif (WIN32)
 
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP /D _BIND_TO_CURRENT_VCLIBS_VERSION=1")
     set (CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD /O2 /Ob2")
@@ -345,6 +355,11 @@ elseif (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
         /DSYNERGY_VERSION=\"${SYNERGY_VERSION}\"
         /D_XKEYCHECK_H
     )
+
+    configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/res/win/version.rc.in
+        ${CMAKE_BINARY_DIR}/src/version.rc
+        @ONLY)
 
 endif()
 
@@ -368,11 +383,12 @@ if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
     option(GIT_SUBMODULE "Check submodules during build" ON)
     if(GIT_SUBMODULE)
         message(STATUS "Submodule update")
-        execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        RESULT_VARIABLE GIT_SUBMOD_RESULT)
-        if(NOT GIT_SUBMOD_RESULT EQUAL "0")
-            message(FATAL_ERROR "git submodule update --init failed with ${GIT_SUBMOD_RESULT}, please checkout submodules")
+        execute_process(
+            COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+            RESULT_VARIABLE GIT_SUBMODULE_RESULT)
+        if(NOT GIT_SUBMODULE_RESULT EQUAL "0")
+            message(FATAL_ERROR "Git submodule update failed: ${GIT_SUBMODULE_RESULT}")
         endif()
     endif()
 endif()
@@ -381,96 +397,10 @@ endif()
 # Google Test
 #
 if(BUILD_TESTS AND NOT EXISTS "${PROJECT_SOURCE_DIR}/ext/googletest/CMakeLists.txt")
-    message(FATAL_ERROR "The submodules were not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again.")
+    message(FATAL_ERROR "Git submodule for Google Test is missing")
 endif()
 
+include(cmake/Packaging.cmake)
+configure_packaging()
 
-#
-# Configure_file... but for directories, recursively.
-#
-macro (configure_files srcDir destDir)
-    message (STATUS "Configuring directory ${destDir}")
-    make_directory (${destDir})
-
-    file (GLOB_RECURSE sourceFiles RELATIVE ${srcDir} ${srcDir}/*)
-    file (GLOB_RECURSE templateFiles LIST_DIRECTORIES false RELATIVE ${srcDir} ${srcDir}/*.in)
-    list (REMOVE_ITEM sourceFiles ${templateFiles})
-
-    foreach (sourceFile ${sourceFiles})
-        set (sourceFilePath ${srcDir}/${sourceFile})
-        if (IS_DIRECTORY ${sourceFilePath})
-            message (STATUS "Copying directory ${sourceFile}")
-            make_directory (${destDir}/${sourceFile})
-        else()
-            message (STATUS "Copying file ${sourceFile}")
-            configure_file (${sourceFilePath} ${destDir}/${sourceFile} COPYONLY)
-        endif()
-    endforeach (sourceFile)
-
-    foreach (templateFile ${templateFiles})
-        set (sourceTemplateFilePath ${srcDir}/${templateFile})
-                string (REGEX REPLACE "\.in$" "" templateFile ${templateFile})
-        message (STATUS "Configuring file ${templateFile}")
-        configure_file (${sourceTemplateFilePath} ${destDir}/${templateFile} @ONLY)
-    endforeach (templateFile)
-endmacro (configure_files)
-
-macro(generate_versionfile)
-    if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin" OR ${CMAKE_SYSTEM_NAME} MATCHES "Linux|.*BSD|DragonFly")
-        FILE(WRITE ${CMAKE_BINARY_DIR}/version
-        "export SYNERGY_VERSION_MAJOR=\"${SYNERGY_VERSION_MAJOR}\"\n"
-        "export SYNERGY_VERSION_MINOR=\"${SYNERGY_VERSION_MINOR}\"\n"
-        "export SYNERGY_VERSION_PATCH=\"${SYNERGY_VERSION_PATCH}\"\n"
-        "export SYNERGY_VERSION_BUILD=\"${SYNERGY_VERSION_BUILD}\"\n"
-        "export SYNERGY_VERSION_STAGE=\"${SYNERGY_VERSION_STAGE}\"\n")
-    elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-        FILE(WRITE ${CMAKE_BINARY_DIR}/version.bat
-        "SET SYNERGY_VERSION_MAJOR=${SYNERGY_VERSION_MAJOR}\n"
-        "SET SYNERGY_VERSION_MINOR=${SYNERGY_VERSION_MINOR}\n"
-        "SET SYNERGY_VERSION_PATCH=${SYNERGY_VERSION_PATCH}\n"
-        "SET SYNERGY_VERSION_BUILD=${SYNERGY_VERSION_BUILD}\n"
-        "SET SYNERGY_VERSION_STAGE=${SYNERGY_VERSION_STAGE}\n")
-    endif()
-endmacro(generate_versionfile)
-
-generate_versionfile()
-
-if (${SYNERGY_BUILD_LEGACY_INSTALLER})
-#
-# macOS app Bundle
-#
-if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    set (CMAKE_INSTALL_RPATH "@loader_path/../Libraries;@loader_path/../Frameworks")
-    set (SYNERGY_BUNDLE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/dist/macos/bundle)
-    set (SYNERGY_BUNDLE_DIR ${CMAKE_BINARY_DIR}/bundle)
-    set (SYNERGY_BUNDLE_APP_DIR ${SYNERGY_BUNDLE_DIR}/Synergy.app)
-    set (SYNERGY_BUNDLE_BINARY_DIR ${SYNERGY_BUNDLE_APP_DIR}/Contents/MacOS)
-    configure_files (${SYNERGY_BUNDLE_SOURCE_DIR} ${SYNERGY_BUNDLE_DIR})
-endif()
-
-#
-# Windows installer
-#
-if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-        message (STATUS "Configuring the v1 installer")
-        set(QT_PATH $ENV{CMAKE_PREFIX_PATH})
-        configure_files (${CMAKE_CURRENT_SOURCE_DIR}/dist/wix ${CMAKE_BINARY_DIR}/installer)
-endif()
-
-#
-# Linux installation
-#
-if (${CMAKE_SYSTEM_NAME} MATCHES "Linux|.*BSD|DragonFly")
-    configure_files (${CMAKE_CURRENT_SOURCE_DIR}/dist/rpm ${CMAKE_BINARY_DIR}/rpm)
-    install(FILES res/synergy.svg DESTINATION share/icons/hicolor/scalable/apps)
-    if("${VERSION_MAJOR}" STREQUAL "2")
-        install(FILES res/synergy2.desktop DESTINATION share/applications)
-    else()
-        install(FILES res/synergy.desktop DESTINATION share/applications)
-    endif()
-endif()
-
-else()
-    message (STATUS "NOT configuring the v1 installer")
-endif()
 add_subdirectory (src)

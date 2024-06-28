@@ -53,18 +53,16 @@ if (SYNERGY_ADD_HEADERS)
     list(APPEND sources ${headers})
 endif()
 
+if (WIN32)
+    list(APPEND sources ${CMAKE_BINARY_DIR}/src/version.rc)
+endif()
+
 include_directories(
     ../../
     ../../lib/
     ../../../ext/googletest/googletest/include
     ../../../ext/googletest/googlemock/include
 )
-
-if (UNIX)
-    include_directories(
-        ../../..
-    )
-endif()
 
 add_executable(integtests ${sources})
 target_link_libraries(integtests

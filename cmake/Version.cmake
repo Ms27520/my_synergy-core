@@ -1,83 +1,58 @@
+# Synergy -- mouse and keyboard sharing utility
+# Copyright (C) 2012-2024 Symless Ltd.
+# Copyright (C) 2009-2012 Nick Bolton
 #
-# Synergy Version
+# This package is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# found in the file LICENSE that should have accompanied this file.
 #
-
-set (SYNERGY_VERSION_MAJOR 1)
-set (SYNERGY_VERSION_MINOR 15)
-set (SYNERGY_VERSION_PATCH 0)
-set (SYNERGY_VERSION_STAGE "snapshot")
-
-# CI changes this to the current tag, but doesn't commit
-set (SYNERGY_VERSION_BUILD 1)
-
+# This package is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
 #
-# Version from CI
-#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-if (DEFINED ENV{SYNERGY_VERSION_MAJOR})
-    set (SYNERGY_VERSION_MAJOR $ENV{SYNERGY_VERSION_MAJOR})
-endif()
+# Either get the version number from the environment or from the VERSION file.
+# On Windows, we also set a special 4-digit MSI version number.
+macro(set_version)
 
-if (DEFINED ENV{SYNERGY_VERSION_MINOR})
-    set (SYNERGY_VERSION_MINOR $ENV{SYNERGY_VERSION_MINOR})
-endif()
+    set (SYNERGY_VERSION $ENV{SYNERGY_VERSION})
+    string(STRIP "${SYNERGY_VERSION}" SYNERGY_VERSION)
 
-if (DEFINED ENV{SYNERGY_VERSION_PATCH})
-    set (SYNERGY_VERSION_PATCH $ENV{SYNERGY_VERSION_PATCH})
-endif()
-
-if (DEFINED ENV{SYNERGY_VERSION_STAGE})
-    set (SYNERGY_VERSION_STAGE $ENV{SYNERGY_VERSION_STAGE})
-endif()
-
-if (NOT DEFINED SYNERGY_REVISION)
-    if (DEFINED ENV{GIT_COMMIT})
-        string (SUBSTRING $ENV{GIT_COMMIT} 0 8 SYNERGY_REVISION)
-    elseif (SYNERGY_VERSION_STAGE STREQUAL "snapshot")
-        execute_process (
-            COMMAND git rev-parse --short=8 HEAD
-            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-            OUTPUT_VARIABLE SYNERGY_REVISION
-            OUTPUT_STRIP_TRAILING_WHITESPACE
-        )
+    if (NOT SYNERGY_VERSION)
+        file(READ "${CMAKE_SOURCE_DIR}/VERSION" SYNERGY_VERSION)
+        string(STRIP "${SYNERGY_VERSION}" SYNERGY_VERSION)
     endif()
-endif()
 
-if (DEFINED SYNERGY_REVISION)
-    string(LENGTH ${SYNERGY_REVISION} SYNERGY_REVISION_LENGTH)
-    if (NOT ((SYNERGY_REVISION MATCHES "^[a-f0-9]+") AND (SYNERGY_REVISION_LENGTH EQUAL "8")))
-        message (FATAL_ERROR "SYNERGY_REVISION ('${SYNERGY_REVISION}') should be a short commit hash")
+    message (STATUS "Version number: " ${SYNERGY_VERSION})
+    add_definitions (-DSYNERGY_VERSION="${SYNERGY_VERSION}")
+    
+    # Useful for copyright (e.g. in macOS bundle .plist.in and Windows version .rc file)
+    string(TIMESTAMP SYNERGY_BUILD_YEAR "%Y")
+
+    # MSI requires a 4-digit number and doesn't accept semver.
+    if (WIN32)
+        string(REGEX MATCH "^([0-9]+)\\.([0-9]+)\\.([0-9]+)" _ "${SYNERGY_VERSION}")
+        set(VERSION_MAJOR "${CMAKE_MATCH_1}")
+        set(VERSION_MINOR "${CMAKE_MATCH_2}")
+        set(VERSION_PATCH "${CMAKE_MATCH_3}")
+
+        # Find the revision number, which is the number after the 'r'.
+        string(REGEX MATCH "r([0-9]+)$" _ "${SYNERGY_VERSION}")
+        set(VERSION_REVISION "${CMAKE_MATCH_1}")
+        if (NOT VERSION_REVISION)
+            set(VERSION_REVISION "0")
+        endif()
+
+        # Dot-separated version number for MSI and Windows version .rc file.
+        set(SYNERGY_VERSION_MS "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}.${VERSION_REVISION}")
+        message (STATUS "Version number for Microsoft (dots): " ${SYNERGY_VERSION_MS})
+
+        # CSV version number for Windows version .rc file.
+        set(SYNERGY_VERSION_MS_CSV "${VERSION_MAJOR},${VERSION_MINOR},${VERSION_PATCH},${VERSION_REVISION}")
+        message (STATUS "Version number for Microsoft (CSV): " ${SYNERGY_VERSION_MS_CSV})
     endif()
-    unset (SYNERGY_REVISION_LENGTH)
-else()
-	set (SYNERGY_REVISION "0badc0de")
-endif()
 
-if (DEFINED ENV{BUILD_NUMBER})
-    set (SYNERGY_VERSION_BUILD $ENV{BUILD_NUMBER})
-endif()
-
-string (TIMESTAMP SYNERGY_BUILD_DATE "%Y%m%d" UTC)
-set (SYNERGY_SNAPSHOT_INFO "${SYNERGY_VERSION_STAGE}.${SYNERGY_REVISION}")
-set (SYNERGY_VERSION_TAG "${SYNERGY_VERSION_STAGE}.b${SYNERGY_VERSION_BUILD}-${SYNERGY_REVISION}")
-set (SYNERGY_VERSION "${SYNERGY_VERSION_MAJOR}.${SYNERGY_VERSION_MINOR}.${SYNERGY_VERSION_PATCH}")
-set (SYNERGY_VERSION_STRING "${SYNERGY_VERSION}-${SYNERGY_VERSION_TAG}")
-message (STATUS "Full Synergy version string is '" ${SYNERGY_VERSION_STRING} "'")
-
-add_definitions (-DSYNERGY_VERSION="${SYNERGY_VERSION}")
-add_definitions (-DSYNERGY_VERSION_STRING="${SYNERGY_VERSION_STRING}")
-add_definitions (-DSYNERGY_REVISION="${SYNERGY_REVISION}")
-add_definitions (-DSYNERGY_BUILD_DATE="${SYNERGY_BUILD_DATE}")
-add_definitions (-DSYNERGY_VERSION_BUILD=${SYNERGY_VERSION_BUILD})
-
-if (SYNERGY_DEVELOPER_MODE)
-    add_definitions (-DSYNERGY_DEVELOPER_MODE=1)
-endif()
-
-if (SYNERGY_ENTERPRISE)
-    add_definitions (-DSYNERGY_ENTERPRISE=1)
-endif()
-
-if (SYNERGY_BUSINESS)
-    add_definitions(-DSYNERGY_BUSINESS=1)
-endif()
+endmacro()

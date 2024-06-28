@@ -14,6 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+set(target unittests)
+
 file(GLOB_RECURSE headers "*.h" "languages/*.h")
 file(GLOB_RECURSE sources "*.cpp" "languages/*.cpp")
 
@@ -56,16 +58,14 @@ include_directories(
     ../../../ext
 )
 
-if (UNIX)
-    include_directories(
-        ../../..
-    )
-endif()
-
 if (SYNERGY_ADD_HEADERS)
     list(APPEND sources ${headers})
 endif()
 
-add_executable(unittests ${sources})
-target_link_libraries(unittests
+if (WIN32)
+    list(APPEND sources ${CMAKE_BINARY_DIR}/src/version.rc)
+endif()
+
+add_executable(${target} ${sources})
+target_link_libraries(${target}
     arch base client server common io net platform server synlib mt ipc gtest gmock shared ${libs})

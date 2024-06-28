@@ -1,0 +1,229 @@
+name: CI
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Synergy version number
+        required: true
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+  release:
+    types: [published]
+
+env:
+  SYNERGY_VERSION: ${{ github.event.inputs.version || github.event.release.tag_name }}
+  UPLOAD_TO_GITHUB: ${{ github.event_name == 'pull_request' && !github.event.pull_request.draft }}
+  UPLOAD_TO_GDRIVE: ${{ github.event_name != 'pull_request' }}
+
+jobs:
+  windows:
+    name: windows-2022
+    runs-on: windows-2022
+    timeout-minutes: 20
+
+    env:
+      QT_BASE_DIR: ${{ github.workspace }}\deps\Qt
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: "recursive"
+
+      - name: Install dependencies
+        run: python ./scripts/install_deps.py
+
+      - name: Set QT_VERSION env var
+        run: python ./scripts/github_env.py --set-qt-version
+
+      - name: Cache Qt
+        id: cache-qt
+        uses: actions/cache@v1
+        with:
+          path: ${{ env.QT_BASE_DIR }}
+          key: ${{ runner.os }}-Qt_${{ env.QT_VERSION }}
+
+      - name: Install Qt
+        if: steps.cache-qt.outputs.cache-hit != 'true'
+        run: python ./scripts/install_deps.py --only qt
+
+      - name: Setup VC++ environment
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Configure
+        env:
+          CMAKE_PREFIX_PATH: "${{ env.QT_BASE_DIR }}\\${{ env.QT_VERSION }}\\msvc2019_64\\"
+        run: cmake -B build --preset=windows-release
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Test
+        run: ./build/bin/unittests
+
+      - name: Package
+        if: ${{ !github.event.pull_request.draft }}
+        run: python ./scripts/package.py
+        env:
+          WINDOWS_PFX_CERTIFICATE: ${{ secrets.WINDOWS_PFX }}
+          WINDOWS_PFX_PASSWORD: ${{ secrets.WINDOWS_PFX_PASS }}
+
+      - name: Upload
+        if:
+        uses: ./.github/actions/dist-upload
+        with:
+          use_github: ${{ env.UPLOAD_TO_GITHUB }}
+          use_gdrive: ${{ env.UPLOAD_TO_GDRIVE }}
+          github-target-filename: "synergy-windows-x64"
+          gdrive-target-base-dir: "synergy1/personal"
+          gdrive-secret-key: ${{ secrets.GOOGLE_DRIVE_KEY }}
+          gdrive-parent-folder-id: ${{ secrets.GOOGLE_DRIVE_TECH_DRIVE }}
+          package-version: ${{ env.SYNERGY_VERSION }}
+
+  macos:
+    runs-on: ${{ matrix.runtime.os }}
+    timeout-minutes: ${{ matrix.runtime.timeout }}
+    name: ${{ matrix.runtime.name }}
+
+    defaults:
+      run:
+        shell: ${{ matrix.runtime.shell }}
+
+    strategy:
+      matrix:
+        runtime:
+          - name: "macos-10-intel"
+            timeout: 20
+            os: "macos-14-large"
+            arch: x64
+            target: "10.14"
+            shell: "bash"
+
+          - name: "macos-11-arm64"
+            timeout: 10
+            os: "macos-14"
+            arch: arm64
+            target: "11"
+            shell: "/usr/bin/arch -arch arm64e /bin/bash --noprofile --norc -eo pipefail {0}"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: "recursive"
+
+      - name: Install dependencies
+        run: ./scripts/install_deps.py
+
+      - name: Configure
+        env:
+          CMAKE_OSX_DEPLOYMENT_TARGET: ${{ matrix.runtime.target }}
+        run: cmake -B build --preset=macos-release -DCMAKE_PREFIX_PATH=$(brew --prefix qt@5)
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Test
+        run: ./build/bin/unittests
+
+      - name: Package
+        if: ${{ !github.event.pull_request.draft }}
+        run: ./scripts/package.py
+        env:
+          APPLE_CODESIGN_ID: ${{ secrets.APPLE_CODESIGN_ID }}
+          APPLE_P12_CERTIFICATE: ${{ secrets.APPLE_P12_CERTIFICATE }}
+          APPLE_P12_PASSWORD: ${{ secrets.APPLE_P12_PASSWORD }}
+          APPLE_NOTARY_USER: ${{ secrets.APPLE_NOTARY_USER }}
+          APPLE_NOTARY_PASSWORD: ${{ secrets.APPLE_NOTARY_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+
+      - name: Upload
+        if:
+        uses: ./.github/actions/dist-upload
+        with:
+          use_github: ${{ env.UPLOAD_TO_GITHUB }}
+          use_gdrive: ${{ env.UPLOAD_TO_GDRIVE }}
+          github-target-filename: "synergy-${{ matrix.runtime.name }}"
+          gdrive-target-base-dir: "synergy1/personal"
+          gdrive-secret-key: ${{ secrets.GOOGLE_DRIVE_KEY }}
+          gdrive-parent-folder-id: ${{ secrets.GOOGLE_DRIVE_TECH_DRIVE }}
+          package-version: ${{ env.SYNERGY_VERSION }}
+
+  linux:
+    runs-on: ${{ matrix.distro.runs-on }}
+    timeout-minutes: 10
+    name: linux-${{ matrix.distro.name }}
+    container: ${{ matrix.distro.container }}
+
+    strategy:
+      matrix:
+        distro:
+          - name: centos-8
+            container: symless/synergy-core:centos8
+            runs-on: ubuntu-latest
+            legacy-cmake: true
+
+          - name: debian-11
+            container: symless/synergy-core:debian11
+            runs-on: ubuntu-latest
+            legacy-cmake: true
+
+          - name: debian-12
+            container: symless/synergy-core:debiansid
+            runs-on: ubuntu-latest
+
+          - name: fedora-37
+            container: symless/synergy-core:fedora37
+            runs-on: ubuntu-latest
+            legacy-cmake: true
+
+          - name: fedora-38
+            container: symless/synergy-core:fedora38
+            runs-on: ubuntu-latest
+            legacy-cmake: true
+
+          - name: ubuntu-20.04
+            container: symless/synergy-core:ubuntu20.04
+            runs-on: ubuntu-latest
+            legacy-cmake: true
+
+          - name: ubuntu-22.04
+            container: symless/synergy-core:ubuntu22.04
+            runs-on: ubuntu-latest
+
+          - name: ubuntu-24.04
+            runs-on: ubuntu-24.04
+
+    steps:
+      # Use @v3 since some older Linux distro versions don't support @v4
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: "recursive"
+
+      - name: Install dependencies
+        run: ./scripts/install_deps.py
+
+      - name: Configure (modern)
+        if: ${{ !matrix.distro.legacy-cmake }}
+        run: cmake -B build --preset=linux-release
+
+      # Some older Linux distro versions don't support modern CMake presets.
+      - name: Configure (legacy)
+        if: ${{ matrix.distro.legacy-cmake }}
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Test
+        run: ./build/bin/unittests
+
+      - name: Package
+        if: ${{ !github.event.pull_request.draft }}
+        run: ./scripts/package.py
