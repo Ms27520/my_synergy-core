@@ -19,9 +19,6 @@ var annotated_dup =
         [ "messages", "namespacedeskflow_1_1gui_1_1messages.html", [
           [ "Errors", "structdeskflow_1_1gui_1_1messages_1_1Errors.html", "structdeskflow_1_1gui_1_1messages_1_1Errors" ]
         ] ],
-        [ "proxy", "namespacedeskflow_1_1gui_1_1proxy.html", [
-          [ "QProcessProxy", "classdeskflow_1_1gui_1_1proxy_1_1QProcessProxy.html", "classdeskflow_1_1gui_1_1proxy_1_1QProcessProxy" ]
-        ] ],
         [ "ClientConnection", "classdeskflow_1_1gui_1_1ClientConnection.html", "classdeskflow_1_1gui_1_1ClientConnection" ],
         [ "CoreProcess", "classdeskflow_1_1gui_1_1CoreProcess.html", "classdeskflow_1_1gui_1_1CoreProcess" ],
         [ "FileTail", "classdeskflow_1_1gui_1_1FileTail.html", "classdeskflow_1_1gui_1_1FileTail" ],
@@ -216,6 +213,7 @@ var annotated_dup =
     [ "KeyState", "classKeyState.html", "classKeyState" ],
     [ "Lock", "classLock.html", "classLock" ],
     [ "Log", "classLog.html", "classLog" ],
+    [ "LogWidget", "classLogWidget.html", "classLogWidget" ],
     [ "MainWindow", "classMainWindow.html", "classMainWindow" ],
     [ "MSWindowsClipboard", "classMSWindowsClipboard.html", "classMSWindowsClipboard" ],
     [ "MSWindowsClipboardAnyTextConverter", "classMSWindowsClipboardAnyTextConverter.html", "classMSWindowsClipboardAnyTextConverter" ],

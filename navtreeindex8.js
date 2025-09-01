@@ -1,5 +1,6 @@
 var NAVTREEINDEX8 =
 {
+"classClient.html#afa3660228505661fa5563fc05158394f":[6,0,62,29],
 "classClientApp.html":[6,0,63],
 "classClientApp.html#a0371b0c2b3af2dd47b3a761d4f54dc57":[6,0,63,5],
 "classClientApp.html#a0ec3e8578a0730e0470e6a0009c53e84":[6,0,63,23],
@@ -248,6 +249,5 @@ var NAVTREEINDEX8 =
 "classDaemonApp.html#a5afdaf6aac158592b91967337196a713a98dd43dfae05b11befe1f140e0ec787a":[6,0,84,0,0],
 "classDaemonApp.html#a5afdaf6aac158592b91967337196a713ab78846123fdd78d5ab62451b855194e3":[6,0,84,0,1],
 "classDaemonApp.html#a5afdaf6aac158592b91967337196a713af245a0dc66dc8cd7d835771034eb4b86":[6,0,84,0,5],
-"classDaemonApp.html#a80a82b62f795b581b690e53ac2c1db23":[6,0,84,2],
-"classDaemonApp.html#a885941599103953d8bff8ad7e432b954":[6,0,84,10]
+"classDaemonApp.html#a80a82b62f795b581b690e53ac2c1db23":[6,0,84,2]
 };
